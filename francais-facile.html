@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Français Facile — Học tiếng Pháp</title>
+<style>
+  :root{
+    --bg-primary:#F2F2F2;
+    --accent-primary:#D96868;
+    --accent-secondary:#91AE6E;
+    --accent-tertiary:#689D4B;
+    --ink:#2E332B;
+    --ink-soft:#5B6357;
+    --card-bg:#FFFFFF;
+    --radius:14px;
+    --shadow: 0 6px 18px rgba(46,51,43,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    background-color:var(--bg-primary);
+    background-image: radial-gradient(circle, rgba(104,157,75,0.16) 1.4px, transparent 1.4px);
+    background-size: 22px 22px;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+
+  /* ---------- HEADER ---------- */
+  header.app-header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(242,242,242,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:2px solid var(--accent-tertiary);
+    padding:14px 20px 0 20px;
+  }
+  .header-top{
+    display:flex; align-items:center; justify-content:space-between;
+    max-width:980px; margin:0 auto 12px auto; flex-wrap:wrap; gap:8px;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{
+    width:38px; height:38px; border-radius:10px;
+    background:var(--accent-tertiary);
+    color:white; display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:18px; flex-shrink:0;
+  }
+  .brand-text h1{font-size:1.05rem; margin:0; font-weight:700;}
+  .brand-text p{margin:0; font-size:0.75rem; color:var(--ink-soft);}
+  .streak{
+    font-size:0.8rem; color:var(--accent-tertiary); font-weight:600;
+    background:#fff; padding:6px 12px; border-radius:20px; border:1.5px solid var(--accent-tertiary);
+  }
+  nav.tabs{
+    max-width:980px; margin:0 auto; display:flex; gap:4px;
+  }
+  nav.tabs button{
+    flex:1; border:none; background:transparent; cursor:pointer;
+    padding:10px 12px 14px 12px; font-size:0.95rem; font-weight:600;
+    color:var(--ink-soft); border-bottom:3px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  nav.tabs button.active{ color:var(--accent-primary); border-bottom-color:var(--accent-primary); }
+  nav.tabs button:hover{ color:var(--accent-primary); }
+
+  main{max-width:980px; margin:0 auto; padding:22px 16px 80px 16px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* ---------- SHARED ---------- */
+  .section-title{font-size:1.15rem; font-weight:700; margin:0 0 4px 0;}
+  .section-sub{color:var(--ink-soft); font-size:0.9rem; margin:0 0 18px 0;}
+
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
+  .chip{
+    padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:600;
+    background:#fff; border:1.5px solid #DADED4; color:var(--ink-soft); cursor:pointer;
+    transition: all .15s;
+  }
+  .chip.active{ background:var(--accent-tertiary); border-color:var(--accent-tertiary); color:#fff; }
+  .chip:hover:not(.active){ border-color:var(--accent-tertiary); color:var(--accent-tertiary); }
+
+  /* ---------- LEXIQUE : FLASHCARDS ---------- */
+  .lex-toolbar{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .due-toggle{
+    display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--ink-soft);
+    background:#fff; padding:8px 14px; border-radius:20px; border:1.5px solid #DADED4; cursor:pointer;
+  }
+  .due-toggle.active{ border-color:var(--accent-primary); color:var(--accent-primary); }
+  .due-count{
+    background:var(--accent-primary); color:#fff; border-radius:10px; padding:1px 8px; font-size:0.75rem;
+  }
+
+  .card-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px;
+  }
+  .flashcard{ perspective:1200px; height:240px; }
+  .flashcard-inner{
+    position:relative; width:100%; height:100%; transition:transform .55s cubic-bezier(.4,.2,.2,1);
+    transform-style:preserve-3d; cursor:pointer;
+  }
+  .flashcard.flipped .flashcard-inner{ transform:rotateY(180deg); }
+  .face{
+    position:absolute; inset:0; backface-visibility:hidden;
+    border-radius:var(--radius); background:var(--card-bg); box-shadow:var(--shadow);
+    padding:16px; display:flex; flex-direction:column;
+    border-top:5px solid var(--accent-tertiary);
+  }
+  .face.back{ transform:rotateY(180deg); border-top-color:var(--accent-primary); }
+  .box-badge{
+    position:absolute; top:10px; right:10px; font-size:0.68rem; font-weight:700;
+    color:var(--accent-tertiary); background:#EAF1E3; padding:2px 8px; border-radius:10px;
+  }
+  .face-type{
+    align-self:flex-start; font-size:0.68rem; font-weight:700; text-transform:lowercase;
+    color:var(--accent-secondary); background:#EEF3E7; padding:2px 8px; border-radius:6px; margin-bottom:8px;
+  }
+  .face-word{ font-size:1.5rem; font-weight:800; margin:0 0 4px 0; line-height:1.15; }
+  .face-phonetic{ font-size:1.05rem; color:var(--ink-soft); font-family:'Charis SIL','Segoe UI',serif; margin:0 0 10px 0; }
+  .audio-btn{
+    margin-top:auto; align-self:flex-start;
+    display:flex; align-items:center; gap:6px;
+    background:var(--accent-tertiary); color:#fff; border:none; border-radius:22px;
+    padding:8px 14px; font-size:0.82rem; font-weight:600; cursor:pointer;
+  }
+  .audio-btn:hover{ background:#557f3c; }
+  .flip-hint{ font-size:0.72rem; color:#9AA394; margin-top:8px; }
+  .face-translation{ font-size:1.15rem; font-weight:700; color:var(--accent-primary); margin:0 0 10px 0; }
+  .face-example{
+    font-size:0.88rem; color:var(--ink); background:#F7F5EF; border-radius:10px; padding:10px 12px;
+    font-style:italic; line-height:1.4; margin:0;
+  }
+  .face-example-audio{
+    margin-top:8px; background:transparent; border:1.5px solid var(--accent-primary); color:var(--accent-primary);
+    border-radius:18px; padding:5px 12px; font-size:0.75rem; font-weight:600; cursor:pointer;
+  }
+
+  .srs-row{ display:flex; gap:8px; margin-top:10px; }
+  .srs-btn{
+    flex:1; border:none; border-radius:10px; padding:9px 4px; font-size:0.8rem; font-weight:700;
+    color:#fff; cursor:pointer; transition:transform .1s;
+  }
+  .srs-btn:active{ transform:scale(0.96); }
+  .srs-hard{ background:var(--accent-primary); }
+  .srs-good{ background:var(--accent-secondary); }
+  .srs-easy{ background:var(--accent-tertiary); }
+  .srs-next{ font-size:0.68rem; color:var(--ink-soft); text-align:center; margin-top:4px; min-height:14px;}
+
+  /* ---------- GRAMMAIRE : ACCORDION ---------- */
+  .gram-toolbar{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;
+  }
+  .test-toggle{
+    display:flex; align-items:center; gap:10px; background:#fff; border:1.5px solid var(--accent-primary);
+    padding:8px 14px; border-radius:20px; cursor:pointer; font-weight:700; font-size:0.85rem; color:var(--accent-primary);
+  }
+  .test-toggle .dot{ width:10px; height:10px; border-radius:50%; background:#D9D9D9; transition:background .15s;}
+  .test-toggle.active .dot{ background:var(--accent-primary); }
+
+  .accordion-item{
+    background:var(--card-bg); border-radius:var(--radius); margin-bottom:12px; box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .accordion-head{
+    display:flex; justify-content:space-between; align-items:center; width:100%;
+    background:none; border:none; cursor:pointer; padding:16px 18px; text-align:left;
+    font-size:1rem; font-weight:700; color:var(--ink);
+  }
+  .accordion-head:hover{ background:#FAFAF7; }
+  .accordion-head .arrow{ color:var(--accent-tertiary); transition:transform .2s; font-size:0.85rem; }
+  .accordion-item.open .accordion-head .arrow{ transform:rotate(180deg); }
+  .accordion-body{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .accordion-item.open .accordion-body{ max-height:4000px; }
+  .accordion-content{ padding:0 18px 20px 18px; }
+
+  .gram-intro{ font-size:0.88rem; color:var(--ink-soft); margin:0 0 14px 0; line-height:1.5;}
+  .sub-title{ font-size:0.85rem; font-weight:700; color:var(--accent-tertiary); margin:16px 0 8px 0; }
+  .sub-title:first-child{ margin-top:0; }
+
+  table.gram-table{ width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:6px; }
+  table.gram-table th, table.gram-table td{
+    border:1px solid #E4E4DC; padding:8px 10px; text-align:left; vertical-align:top;
+  }
+  table.gram-table th{ background:#F0EFE7; font-weight:700; color:var(--ink); }
+  table.gram-table td.example-cell, table.gram-table th.example-cell{ }
+  .blurrable{ transition:filter .2s ease; cursor:pointer; }
+  body.test-mode .blurrable:not(.revealed){ filter:blur(5px); color:transparent; text-shadow:0 0 8px rgba(0,0,0,0.4); background:#EFEFE7;}
+  body.test-mode .blurrable:not(.revealed):hover{ filter:blur(1.5px); }
+
+  .formula-row{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:10px 0 14px 0;
+  }
+  .formula-box{
+    background:#F0EFE7; border:1.5px solid var(--accent-tertiary); border-radius:8px;
+    padding:6px 12px; font-weight:700; font-size:0.85rem; color:var(--accent-tertiary);
+  }
+  .formula-plus{ color:var(--ink-soft); font-weight:700; }
+
+  .exception-box{
+    background:#FBEDED; border-left:4px solid var(--accent-primary); border-radius:8px;
+    padding:10px 14px; font-size:0.85rem; margin:12px 0; color:#7A3232;
+  }
+  .exception-box b{ color:var(--accent-primary); }
+
+  footer.app-footer{
+    text-align:center; color:var(--ink-soft); font-size:0.75rem; padding:20px; opacity:0.7;
+  }
+
+  @media (max-width:520px){
+    .card-grid{ grid-template-columns:1fr 1fr; }
+    .flashcard{ height:210px; }
+    .face-word{ font-size:1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-top">
+    <div class="brand">
+      <div class="brand-mark">Fr</div>
+      <div class="brand-text">
+        <h1>Français Facile</h1>
+        <p>Grammaire & Lexique — Niveau A1/A2</p>
+      </div>
+    </div>
+    <div class="streak" id="streakBadge">📚 0 mots révisés</div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="grammaire">Grammaire</button>
+    <button class="tab-btn" data-view="lexique">Lexique</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ===================== GRAMMAIRE ===================== -->
+  <section id="grammaire" class="view active">
+    <p class="section-title">Précis grammatical</p>
+    <p class="section-sub">Touchez un thème pour l'ouvrir. Activez le mode « Tester » pour cacher les exemples et vous entraîner.</p>
+
+    <div class="gram-toolbar">
+      <div></div>
+      <div class="test-toggle" id="testToggle"><span class="dot"></span> Mode « Se tester »</div>
+    </div>
+
+    <div id="accordionContainer"></div>
+  </section>
+
+  <!-- ===================== LEXIQUE ===================== -->
+  <section id="lexique" class="view">
+    <p class="section-title">Lexique en contexte</p>
+    <p class="section-sub">Touchez une carte pour la retourner. Écoutez la prononciation, puis évaluez votre mémorisation.</p>
+
+    <div class="lex-toolbar">
+      <div class="chip-row" id="categoryChips"></div>
+      <div class="due-toggle" id="dueToggle">À réviser <span class="due-count" id="dueCount">0</span></div>
+    </div>
+
+    <div class="card-grid" id="cardGrid"></div>
+  </section>
+</main>
+
+<footer class="app-footer">Basé sur « Précis grammatical » et « Lexique » — INSP1</footer>
+
+<script>
+/* ============================================================
+   DONNÉES — LEXIQUE
+   ============================================================ */
+const vocabData = [
+  // --- Salutations / Classe (Leçon 1) ---
+  {word:"bonjour", phonetic:"[bɔ̃ʒuʀ]", type:"expr.", translation:"xin chào (buổi sáng/chiều)", example:"Bonjour madame, comment allez-vous ?", category:"Salutations"},
+  {word:"bonsoir", phonetic:"[bɔ̃swaʀ]", type:"expr.", translation:"chào buổi tối", example:"Bonsoir, entrez s'il vous plaît.", category:"Salutations"},
+  {word:"au revoir", phonetic:"[oʀəvwaʀ]", type:"expr.", translation:"tạm biệt", example:"Au revoir, à demain !", category:"Salutations"},
+  {word:"merci", phonetic:"[mɛʀsi]", type:"expr.", translation:"cảm ơn", example:"Merci beaucoup pour votre aide.", category:"Salutations"},
+  {word:"s'il vous plaît", phonetic:"[silvuplɛ]", type:"expr.", translation:"làm ơn", example:"Un café, s'il vous plaît.", category:"Salutations"},
+  {word:"apprendre", phonetic:"[apʀɑ̃dʀ]", type:"v.", translation:"học", example:"J'apprends le français depuis un mois.", category:"Salutations"},
+  {word:"livre", phonetic:"[livʀ] (un)", type:"n.", translation:"quyển sách", example:"J'ai un livre de français dans mon sac.", category:"Salutations"},
+  {word:"stylo", phonetic:"[stilo] (un)", type:"n.", translation:"cây bút", example:"Le stylo est sur la table.", category:"Salutations"},
+
+  // --- Jours / Temps (Leçon 2) ---
+  {word:"lundi", phonetic:"[lœ̃di]", type:"n.", translation:"thứ Hai", example:"Le lundi, je travaille toute la journée.", category:"Jours & mois"},
+  {word:"dimanche", phonetic:"[dimɑ̃ʃ]", type:"n.", translation:"chủ nhật", example:"Le dimanche, je me repose à la maison.", category:"Jours & mois"},
+  {word:"semaine", phonetic:"[səmɛn] (la)", type:"n.", translation:"tuần", example:"Il y a sept jours dans une semaine.", category:"Jours & mois"},
+  {word:"janvier", phonetic:"[ʒɑ̃vje]", type:"n.", translation:"tháng Một", example:"Mon anniversaire est en janvier.", category:"Jours & mois"},
+  {word:"âge", phonetic:"[ɑʒ] (un)", type:"n.", translation:"tuổi", example:"Quel âge as-tu ?", category:"Jours & mois"},
+
+  // --- Identité / Profession (Leçon 4) ---
+  {word:"français(e)", phonetic:"[fʀɑ̃sɛ] / [fʀɑ̃sɛz]", type:"adj.", translation:"người Pháp", example:"Elle est française et il est italien.", category:"Identité"},
+  {word:"profession", phonetic:"[pʀɔfesjɔ̃] (une)", type:"n.", translation:"nghề nghiệp", example:"Quelle est ta profession ?", category:"Identité"},
+  {word:"s'appeler", phonetic:"[sapəle]", type:"v.", translation:"tên là", example:"Je m'appelle Marie, et toi ?", category:"Identité"},
+  {word:"habiter", phonetic:"[abite]", type:"v.", translation:"sống ở", example:"J'habite à Paris depuis deux ans.", category:"Identité"},
+  {word:"avoir", phonetic:"[avwaʀ]", type:"v.", translation:"có", example:"J'ai vingt ans et un frère.", category:"Identité"},
+
+  // --- Famille (Leçon 8) ---
+  {word:"famille", phonetic:"[famij] (une)", type:"n.", translation:"gia đình", example:"J'ai une grande famille sympathique.", category:"Famille"},
+  {word:"mère", phonetic:"[mɛʀ] (la)", type:"n.", translation:"mẹ", example:"Ma mère est professeure d'anglais.", category:"Famille"},
+  {word:"père", phonetic:"[pɛʀ] (le)", type:"n.", translation:"bố", example:"Mon père travaille beaucoup.", category:"Famille"},
+  {word:"frère", phonetic:"[fʀɛʀ] (le)", type:"n.", translation:"anh/em trai", example:"J'ai un frère et une sœur.", category:"Famille"},
+  {word:"sœur", phonetic:"[sœʀ] (la)", type:"n.", translation:"chị/em gái", example:"Ma sœur habite à Lyon.", category:"Famille"},
+  {word:"enfants", phonetic:"[ɑ̃fɑ̃] (les)", type:"n.", translation:"các con, trẻ em", example:"Ils ont deux enfants adorables.", category:"Famille"},
+
+  // --- Description / Loisirs (Leçon 9-10) ---
+  {word:"adorable", phonetic:"[adɔʀabl]", type:"adj.", translation:"đáng yêu", example:"Ton chat est vraiment adorable.", category:"Description"},
+  {word:"beau / belle", phonetic:"[bo] / [bɛl]", type:"adj.", translation:"đẹp trai / đẹp", example:"C'est une belle robe verte.", category:"Description"},
+  {word:"sympa", phonetic:"[sɛ̃pa]", type:"adj.", translation:"dễ mến", example:"Mes collègues sont très sympas.", category:"Description"},
+  {word:"élégant(e)", phonetic:"[elegɑ̃] / [elegɑ̃t]", type:"adj.", translation:"thanh lịch", example:"Il porte un costume élégant.", category:"Description"},
+  {word:"aimer", phonetic:"[eme]", type:"v.", translation:"thích, yêu", example:"J'aime beaucoup le cinéma français.", category:"Description"},
+  {word:"lire", phonetic:"[liʀ]", type:"v.", translation:"đọc", example:"Je lis un livre tous les soirs.", category:"Description"},
+  {word:"danser", phonetic:"[dɑ̃se]", type:"v.", translation:"nhảy múa", example:"Elle danse très bien la salsa.", category:"Description"},
+
+  // --- Ville / Direction (Leçon 12-13) ---
+  {word:"musée", phonetic:"[myze] (un)", type:"n.", translation:"bảo tàng", example:"Le musée est fermé le lundi.", category:"Ville"},
+  {word:"gare", phonetic:"[gaʀ] (une)", type:"n.", translation:"nhà ga", example:"La gare est loin d'ici.", category:"Ville"},
+  {word:"pharmacie", phonetic:"[faʀmasi] (une)", type:"n.", translation:"hiệu thuốc", example:"La pharmacie ouvre à neuf heures.", category:"Ville"},
+  {word:"métro", phonetic:"[metʀo] (le)", type:"n.", translation:"tàu điện ngầm", example:"Je prends le métro tous les jours.", category:"Ville"},
+  {word:"à droite", phonetic:"[a dʀwat]", type:"expr.", translation:"bên phải", example:"Tournez à droite après la banque.", category:"Ville"},
+  {word:"à gauche", phonetic:"[a goʃ]", type:"expr.", translation:"bên trái", example:"L'école est à gauche du parc.", category:"Ville"},
+  {word:"tout droit", phonetic:"[tu dʀwa]", type:"expr.", translation:"đi thẳng", example:"Continuez tout droit jusqu'au pont.", category:"Ville"},
+  {word:"tourner", phonetic:"[tuʀne]", type:"v.", translation:"rẽ, quay", example:"Tournez à gauche au feu rouge.", category:"Ville"},
+
+  // --- Alimentation / Cuisine / Restaurant (Leçon 17,20,21) ---
+  {word:"pomme", phonetic:"[pɔm] (une)", type:"n.", translation:"quả táo", example:"J'achète des pommes rouges au marché.", category:"Nourriture"},
+  {word:"lait", phonetic:"[lɛ] (le)", type:"n.", translation:"sữa", example:"Je bois du lait le matin.", category:"Nourriture"},
+  {word:"fruit", phonetic:"[fʀɥi] (un)", type:"n.", translation:"trái cây", example:"Les fruits sont bons pour la santé.", category:"Nourriture"},
+  {word:"légume", phonetic:"[legym] (un)", type:"n.", translation:"rau", example:"Je mange des légumes tous les jours.", category:"Nourriture"},
+  {word:"couper", phonetic:"[kupe]", type:"v.", translation:"cắt", example:"Je coupe les carottes pour la soupe.", category:"Nourriture"},
+  {word:"four", phonetic:"[fuʀ] (un)", type:"n.", translation:"lò nướng", example:"Le gâteau est dans le four.", category:"Nourriture"},
+  {word:"recette", phonetic:"[ʀəsɛt] (une)", type:"n.", translation:"công thức nấu ăn", example:"Cette recette est très facile à faire.", category:"Nourriture"},
+  {word:"addition", phonetic:"[adisjɔ̃] (une)", type:"n.", translation:"hóa đơn", example:"L'addition, s'il vous plaît !", category:"Nourriture"},
+  {word:"menu", phonetic:"[məny] (un)", type:"n.", translation:"thực đơn", example:"Je voudrais voir le menu, merci.", category:"Nourriture"},
+  {word:"boisson", phonetic:"[bwasɔ̃] (une)", type:"n.", translation:"đồ uống", example:"Quelle boisson voulez-vous prendre ?", category:"Nourriture"},
+
+  // --- Vêtements (Leçon 18) ---
+  {word:"jupe", phonetic:"[ʒyp] (une)", type:"n.", translation:"váy", example:"Elle porte une jupe bleue aujourd'hui.", category:"Vêtements"},
+  {word:"manteau", phonetic:"[mɑ̃to] (un)", type:"n.", translation:"áo khoác", example:"Il fait froid, prends ton manteau.", category:"Vêtements"},
+  {word:"essayer", phonetic:"[eseje]", type:"v.", translation:"thử (đồ)", example:"Je peux essayer cette robe rouge ?", category:"Vêtements"},
+  {word:"taille", phonetic:"[taj] (la)", type:"n.", translation:"kích cỡ", example:"Quelle est ta taille de chaussures ?", category:"Vêtements"},
+  {word:"chaussure", phonetic:"[ʃosyʀ] (une)", type:"n.", translation:"giày", example:"J'achète des chaussures noires.", category:"Vêtements"},
+
+  // --- Santé (Leçon 24) ---
+  {word:"fièvre", phonetic:"[fjɛvʀ] (la)", type:"n.", translation:"sốt", example:"J'ai de la fièvre depuis hier soir.", category:"Santé"},
+  {word:"médecin", phonetic:"[medsɛ̃] (un)", type:"n.", translation:"bác sĩ", example:"Je vais chez le médecin cet après-midi.", category:"Santé"},
+  {word:"tête", phonetic:"[tɛt] (la)", type:"n.", translation:"đầu", example:"J'ai mal à la tête aujourd'hui.", category:"Santé"},
+  {word:"pharmacien(ne)", phonetic:"[faʀmasjɛ̃] / [faʀmasjɛn]", type:"n.", translation:"dược sĩ", example:"Le pharmacien me donne des médicaments.", category:"Santé"},
+
+  // --- Voyage / Travail / Logement (Leçon 26,28,30) ---
+  {word:"voyager", phonetic:"[vwajaʒe]", type:"v.", translation:"đi du lịch", example:"J'aime voyager pendant les vacances.", category:"Voyage & travail"},
+  {word:"valise", phonetic:"[valiz] (une)", type:"n.", translation:"va li", example:"Je prépare ma valise pour le voyage.", category:"Voyage & travail"},
+  {word:"aéroport", phonetic:"[aeʀɔpɔʀ] (un)", type:"n.", translation:"sân bay", example:"L'aéroport est loin du centre-ville.", category:"Voyage & travail"},
+  {word:"entreprise", phonetic:"[ɑ̃tʀəpʀiz] (l')", type:"n.", translation:"công ty", example:"Elle travaille dans une grande entreprise.", category:"Voyage & travail"},
+  {word:"stage", phonetic:"[staʒ] (un)", type:"n.", translation:"kỳ thực tập", example:"Je fais un stage cet été à Lyon.", category:"Voyage & travail"},
+  {word:"appartement", phonetic:"[apaʀtəmɑ̃] (un)", type:"n.", translation:"căn hộ", example:"Nous cherchons un appartement au centre-ville.", category:"Logement"},
+  {word:"balcon", phonetic:"[balkɔ̃] (un)", type:"n.", translation:"ban công", example:"L'appartement a un grand balcon.", category:"Logement"},
+  {word:"cuisine", phonetic:"[kɥizin] (une)", type:"n.", translation:"nhà bếp", example:"La cuisine est petite mais moderne.", category:"Logement"},
+  {word:"loyer", phonetic:"[lwaje] (un)", type:"n.", translation:"tiền thuê nhà", example:"Le loyer est cher à Paris.", category:"Logement"}
+];
+
+/* ============================================================
+   DONNÉES — GRAMMAIRE (Précis grammatical)
+   Chaque table : {headers:[...], rows:[[...]], blurLastCol:true/false}
+   ============================================================ */
+const grammarData = [
+{
+  id:"articles", title:"Les articles",
+  intro:"Les articles sont utilisés pour nommer les choses ou les personnes. Ils sont placés devant le nom.",
+  subs:[
+    { sub:"Articles définis et indéfinis",
+      table:{headers:["","Masculin","Féminin","Pluriel"],
+        rows:[
+          ["Article indéfini<br><span style='color:var(--ink-soft);font-weight:400'>personne/chose non précisée</span>","un restaurant","une chanson","des chanteurs / des chansons"],
+          ["Article défini<br><span style='color:var(--ink-soft);font-weight:400'>pays, chose/personne unique</span>","le Japon · le restaurant <i>La Felicita</i>","la France · la mère de Jean","les États-Unis · les chansons pop"]
+        ], blurLastCol:false}
+    },
+    { sub:null, note:"Les articles <b>le</b> et <b>la</b> deviennent <b>l'</b> devant une voyelle ou un <i>h</i> muet. Ex. : l'Italie, l'argent, l'oncle, l'hôtel" },
+    { sub:"Articles contractés avec à",
+      table:{headers:["","Singulier","Pluriel"],
+        rows:[["Masculin","à + le → <b>au</b><br>Il va à le restaurant. → Il va <u>au</u> restaurant.","à + les → <b>aux</b><br>Il a mal à les pieds. → Il a mal <u>aux</u> pieds."]],
+        blurLastCol:true}
+    },
+    { sub:null, note:"Pas de contraction pour <b>à la</b> et <b>à l'</b>. Ex. : Il va à la piscine, à l'école, à l'hôpital." },
+    { sub:"Articles contractés avec de",
+      table:{headers:["","Singulier","Pluriel"],
+        rows:[["Masculin","de + le → <b>du</b><br>Il habite à côté de le port. → Il habite à côté <u>du</u> port.","de + les → <b>des</b><br>Il fait de les abdos. → Il fait <u>des</u> abdos."]],
+        blurLastCol:true}
+    },
+    { sub:null, note:"Pas de contraction pour <b>de la</b> et <b>de l'</b>. Ex. : Il vient de la piscine, de l'école, de l'hôpital." }
+  ]
+},
+{
+  id:"nom", title:"Le nom",
+  intro:"Le nom peut être masculin ou féminin, singulier ou pluriel.",
+  subs:[
+    { sub:"Masculin et féminin — cas général",
+      table:{headers:["Règle","Masculin","Féminin"],
+        rows:[
+          ["Nom masculin + <b>e</b>","un ami · un invité · un écrivain · un cousin","une amie · une invitée · une écrivaine · une cousine"],
+          ["Terminé par <i>e</i> → forme identique","un artiste · un collègue · un peintre","une artiste · une collègue · une peintre"],
+          ["La consonne finale double","un musicien · un champion","une musicienne · une championne"],
+          ["Toute la syllabe finale change","un serveur · un réalisateur · un poète · un copain · un sportif · un boulanger","une serveuse · une réalisatrice · une poétesse · une copine · une sportive · une boulangère"],
+          ["Forme totalement différente","le père · le fils · le frère · le grand-père · l'oncle","la mère · la fille · la sœur · la grand-mère · la tante"]
+        ], blurLastCol:true}
+    },
+    { sub:"Singulier et pluriel des noms",
+      table:{headers:["Règle","Singulier","Pluriel"],
+        rows:[
+          ["Nom + <b>s</b>","une chanson · un vélo · un enfant","des chansons · des vélos · des enfants"],
+          ["Terminé en <i>s, x, z</i> → identique","un bras · une voix · un nez","des bras · des voix · des nez"],
+          ["<b>-al, -ail → -aux</b>","un hôpital · un travail","des hôpitaux · des travaux"],
+          ["<b>-eau, -eu → -eaux, -eux</b>","un manteau · un jeu","des manteaux · des jeux"]
+        ], blurLastCol:true}
+    },
+    { sub:null, note:"Exceptions : un <b>œil</b> → des <b>yeux</b> ; un <b>genou</b> → des <b>genoux</b>" }
+  ]
+},
+{
+  id:"adjectif", title:"L'adjectif qualificatif",
+  intro:"L'adjectif qualificatif décrit une personne ou une chose.",
+  subs:[
+    { sub:"Masculin et féminin",
+      table:{headers:["Règle","Masculin","Féminin"],
+        rows:[
+          ["Adjectif + <b>e</b>","fatigué · joli · grand · petit · portugais","fatiguée · jolie · grande · petite · portugaise"],
+          ["Terminé par <i>e</i> → identique","adorable · sympathique · triste · belge","adorable · sympathique · triste · belge"],
+          ["La consonne finale double","bon · naturel · bas · gentil · gros","bonne · naturelle · basse · gentille · grosse"],
+          ["Toute la syllabe change","sportif · sérieux · neuf · cher","sportive · sérieuse · neuve · chère"],
+          ["Forme très différente","beau · blanc · vieux · fou · long","belle · blanche · vieille · folle · longue"]
+        ], blurLastCol:true}
+    },
+    { sub:"Singulier et pluriel",
+      table:{headers:["Règle","Singulier","Pluriel"],
+        rows:[
+          ["Adjectif + <b>s</b>","court / courte · long / longue","courts / courtes · longs / longues"],
+          ["Terminé en <i>s, x</i> → identique au masc.","gros · heureux","gros · heureux"],
+          ["<b>-al → -aux</b>","spécial","spéciaux"],
+          ["<b>-eau → -eaux</b>","nouveau","nouveaux"]
+        ], blurLastCol:true}
+    },
+    { sub:"La place de l'adjectif",
+      table:{headers:["Règle","Exemple"],
+        rows:[
+          ["Après le nom (cas général)","C'est un vêtement élégant. C'est une robe verte."],
+          ["Avant le nom : beau, grand, petit, gros, nouveau…","un beau pantalon · une grande boutique · une petite robe · un nouveau manteau"]
+        ], blurLastCol:true}
+    },
+    { sub:null, note:"Adverbes d'intensité : <b>très</b> (++) ou <b>trop</b> (+++). Ex. : Il est très fatigué. Elle est trop grande." }
+  ]
+},
+{
+  id:"possessif", title:"L'adjectif possessif",
+  intro:"Il indique une possession ou une relation, et se place devant le nom. Il s'accorde avec l'objet possédé, pas avec le possesseur.",
+  subs:[
+    { sub:"Un seul possesseur",
+      table:{headers:["Possesseur","Masc. singulier","Fém. singulier","Pluriel"],
+        rows:[
+          ["je","mon frère","ma sœur","mes enfants"],
+          ["tu","ton appartement","ta maison","tes affaires"],
+          ["il / elle","son livre","sa voiture","ses vêtements"]
+        ], blurLastCol:true}
+    },
+    { sub:"Plusieurs possesseurs",
+      table:{headers:["Possesseur","Singulier","Pluriel"],
+        rows:[
+          ["nous","notre famille","nos parents"],
+          ["vous","votre pays","vos amis"],
+          ["ils / elles","leur adresse","leurs voisins"]
+        ], blurLastCol:true}
+    },
+    { sub:null, note:"Devant une voyelle, <b>ma/ta/sa</b> deviennent <b>mon/ton/son</b> : ma adresse → <b>mon</b> adresse · ta amie → <b>ton</b> amie · sa école → <b>son</b> école" }
+  ]
+},
+{
+  id:"demonstratif", title:"L'adjectif démonstratif",
+  intro:"Il désigne une personne, une chose ou un lieu et s'accorde avec le nom.",
+  subs:[
+    { sub:null,
+      table:{headers:["Genre / nombre","Forme","Exemple"],
+        rows:[
+          ["Masculin singulier","ce (cet devant voyelle/h muet)","ce pantalon · cet ami, cet homme"],
+          ["Féminin singulier","cette","cette jupe"],
+          ["Pluriel","ces","ces pulls / ces chaussures"]
+        ], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"quantite", title:"L'expression de la quantité",
+  intro:"On distingue l'article partitif (quantité indéterminée) et les expressions de quantité (précise ou globale).",
+  subs:[
+    { sub:"L'article partitif",
+      table:{headers:["Affirmative","Négative"],
+        rows:[
+          ["Je prends du sucre.","Je ne prends pas de sucre."],
+          ["Je prends de la confiture.","Je ne prends pas de confiture."],
+          ["Je bois de l'eau.","Je ne bois pas d'eau."],
+          ["Je mange des pâtes.","Je ne mange pas de pâtes."]
+        ], blurLastCol:true}
+    },
+    { sub:null, note:"À la forme négative, il n'y a <b>pas</b> d'indication du masculin, du féminin ou du pluriel : toujours <b>ne... pas de/d'</b>." },
+    { sub:"Les expressions de quantité",
+      table:{headers:["Type","Exemples"],
+        rows:[
+          ["Adjectifs numéraux","une entrée · deux desserts · cinq oranges"],
+          ["Quantité globale","un peu de, beaucoup de, assez de, trop de sucre/fraises/sel/ail"],
+          ["Quantité précise","500 grammes de farine · deux kilos de pommes · un litre de lait · une bouteille d'eau"]
+        ], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"lieu", title:"Les indications de lieu",
+  intro:"Ces expressions situent une personne, une chose ou un lieu.",
+  subs:[
+    { sub:"Pays et villes",
+      table:{headers:["Cas","Préposition","Exemple"],
+        rows:[
+          ["Villes / pays sans article","à","J'habite à Londres. Je suis à Cuba."],
+          ["Pays masc. + consonne","au","Je vais au Mexique."],
+          ["Pays fém. / pays masc. + voyelle","en","Je suis en Australie. Je vais en Équateur."],
+          ["Pays pluriels","aux","Elle habite aux États-Unis."]
+        ], blurLastCol:true}
+    },
+    { sub:"Prépositions à, de, chez",
+      table:{headers:["Où on est/va","Où on vient"],
+        rows:[
+          ["au concert · à la mairie · chez moi · chez Arthur","de la poste · du marché · de Belgique · de chez lui"]
+        ], blurLastCol:true}
+    },
+    { sub:"Autres prépositions de lieu",
+      table:{headers:["Préposition","Exemple"],
+        rows:[
+          ["à côté de ≠ loin de","L'appartement est à côté de la cathédrale et loin de l'église."],
+          ["devant ≠ derrière","La poste est derrière ce bâtiment. L'arrêt de bus est devant la pharmacie."],
+          ["sur ≠ sous","La rue n'est pas sur le plan. La rivière passe sous le pont."],
+          ["entre","Le restaurant est entre deux magasins."]
+        ], blurLastCol:true}
+    },
+    { sub:null, note:"Avec <b>à</b> et <b>de</b>, on utilise les articles contractés. Ex. : loin <b>du</b> supermarché ; à côté <b>des</b> magasins." }
+  ]
+},
+{
+  id:"temps", title:"Les indications de temps",
+  intro:"Ces mots permettent de situer une action dans le temps.",
+  subs:[
+    { sub:"Indiquer un moment",
+      table:{headers:["Structure","Exemple"],
+        rows:[
+          ["en + année","Il est né en 2001."],
+          ["dans + durée","Il arrive dans trois jours."],
+          ["à + heure","Je commence mon travail à 9 heures."],
+          ["il y a + durée (passé)","Il est parti il y a deux semaines."],
+          ["quand + phrase","Quand il se lève, il prend son petit déjeuner."]
+        ], blurLastCol:true}
+    },
+    { sub:"Chronologie, durée, habitude, fréquence",
+      table:{headers:["Structure","Exemple"],
+        rows:[
+          ["d'abord, puis, ensuite, après","D'abord, je me lève. Ensuite, je me douche, puis je m'habille."],
+          ["de... à + heure/jour","Je travaille de midi à 18 heures, du lundi au vendredi."],
+          ["le + jour (habitude)","Je ne travaille pas le mercredi."],
+          ["ne... jamais, parfois, souvent, toujours","Je ne sors jamais la semaine. Je vais souvent au cinéma le samedi."]
+        ], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"interrogation", title:"L'interrogation",
+  intro:"Il existe trois façons de poser une question, et des mots interrogatifs spécifiques.",
+  subs:[
+    { sub:"Les trois formes de la question",
+      table:{headers:["Intonative","Avec est-ce que","Avec inversion"],
+        rows:[["Tu aimes le foot ?","Est-ce que tu aimes le foot ?","Aimes-tu le foot ?"]], blurLastCol:true}
+    },
+    { sub:"Les mots interrogatifs",
+      table:{headers:["Mot","Usage","Exemple"],
+        rows:[
+          ["Qui","une personne","Qui est-ce ?"],
+          ["Que / Quoi","une chose","Qu'est-ce que tu fais ?"],
+          ["Où","le lieu","Où est-ce que tu habites ?"],
+          ["Comment","la manière","Comment vas-tu au travail ?"],
+          ["Quand","le temps","Quand pars-tu ?"],
+          ["Combien (de)","la quantité","Combien de personnes est-ce qu'il y a ?"],
+          ["Pourquoi","la cause","Pourquoi tu pleures ?"]
+        ], blurLastCol:true}
+    },
+    { sub:"Quel(s) / Quelle(s)",
+      table:{headers:["Forme","Exemple"],
+        rows:[
+          ["Quel + nom masc. sing.","Tu veux quel pantalon ?"],
+          ["Quelle + nom fém. sing.","Quelle est votre pointure ?"],
+          ["Quels + nom masc. pl.","Quels sont tes vêtements préférés ?"],
+          ["Quelles + nom fém. pl.","Tu vas mettre quelles chaussures ?"]
+        ], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"negation", title:"La négation",
+  intro:"La place de la négation varie selon le temps et le mode du verbe.",
+  subs:[
+    { sub:null,
+      table:{headers:["Structure","Exemple"],
+        rows:[
+          ["ne/n'... pas","Je ne prends pas le métro. On n'a pas mangé."],
+          ["ne/n'... rien","Je n'entends rien. Il n'a rien mangé."],
+          ["ne/n'... jamais","Il ne parle jamais. Il n'a jamais pris l'avion."]
+        ], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"but-cause", title:"Le but et la cause",
+  intro:null,
+  subs:[
+    { sub:null,
+      table:{headers:["Fonction","Structure","Exemple"],
+        rows:[
+          ["Le but","pour + infinitif","Il faut suivre les indications pour ne pas rater la recette."],
+          ["La cause","parce que + phrase","Pourquoi tu ne viens pas ? – Parce que je suis fatigué !"]
+        ], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"comparaison", title:"La comparaison",
+  intro:null,
+  subs:[
+    { sub:null,
+      table:{headers:["Degré","Structure","Exemple"],
+        rows:[
+          ["Infériorité (–)","moins + adj. + que","Cet appartement est moins grand que l'autre."],
+          ["Égalité (=)","aussi + adj. + que","Cet appartement est aussi grand que l'autre."],
+          ["Supériorité (+)","plus + adj. + que","Cet appartement est plus grand que l'autre."]
+        ], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"pronoms", title:"Les pronoms personnels",
+  intro:"Les pronoms sujets font l'action ; les pronoms toniques insistent sur la personne ; « y » remplace un lieu.",
+  subs:[
+    { sub:"Pronoms sujets et toniques",
+      table:{headers:["Personne","Sujet","Tonique"],
+        rows:[
+          ["1ère sg.","je","moi"],
+          ["2e sg.","tu","toi"],
+          ["3e sg.","il / elle / on","lui / elle"],
+          ["1ère pl.","nous","nous"],
+          ["2e pl.","vous","vous"],
+          ["3e pl.","ils / elles","eux / elles"]
+        ], blurLastCol:true}
+    },
+    { sub:null, note:"Le pronom <b>on</b> remplace souvent <b>nous</b> à l'oral. <b>Vous</b> s'utilise au singulier (formel) ou au pluriel." },
+    { sub:"Le pronom y (remplace un lieu)",
+      table:{headers:["Question","Réponse"],
+        rows:[["Tu vas à la réunion ?","Oui, j'y vais."],["On va au restaurant ?","Non, on n'y va pas."]], blurLastCol:true}
+    }
+  ]
+},
+{
+  id:"verbes", title:"Les verbes et les conjugaisons",
+  intro:"Le présent sert à parler d'une action actuelle, habituelle, ou à décrire.",
+  subs:[
+    { sub:"Être et avoir",
+      table:{headers:["Usage","Exemple"],
+        rows:[
+          ["être : nationalité, profession, description","Je suis français. Il est musicien. Elle est grande et sportive."],
+          ["c'est / ce sont : présenter","C'est ma sœur. Ce sont mes enfants."],
+          ["avoir : âge, possession, famille","Il a 20 ans. Elle a une tablette. J'ai trois frères."],
+          ["il y a (invariable) : existence","Il y a trois personnes dans le magasin."]
+        ], blurLastCol:true}
+    },
+    { sub:"Verbes en -er (radical + e, es, e, ons, ez, ent)",
+      table:{headers:["Pronom","habiter"],
+        rows:[["j'","habite à Berlin"],["tu","habites à Berlin"],["il/elle/on","habite à Berlin"],["nous","habitons à Berlin"],["vous","habitez à Berlin"],["ils/elles","habitent à Berlin"]],
+        blurLastCol:true}
+    },
+    { sub:"Verbes en -ir (radical + s, s, t, ons, ez, ent)",
+      table:{headers:["Verbe","Singulier","Pluriel"],
+        rows:[["finir","je finis","nous finissons"],["dormir","je dors","nous dormons"]], blurLastCol:true}
+    },
+    { sub:"Verbes pronominaux",
+      table:{headers:["Verbe","Conjugaison"],
+        rows:[["s'appeler","Je m'appelle Emma."],["se lever","Tu te lèves."],["se coucher","Il/Elle/On se couche."],["s'habiller","Ils/Elles s'habillent."]], blurLastCol:true}
+    },
+    { sub:"L'impératif (tu, nous, vous — sans pronom sujet)",
+      table:{headers:["Affirmative","Négative"],
+        rows:[["Viens avec moi ! Prenons le métro ! Allez par là !","Ne viens pas avec moi ! Ne prenons pas le métro ! N'allez pas par là !"],["Va tout droit !","Ne va pas tout droit !"]],
+        blurLastCol:true}
+    },
+    { sub:"Le futur proche : aller (présent) + infinitif",
+      table:{headers:["Affirmative","Négative"],
+        rows:[["Je vais partir. Tu vas venir ?","Je ne vais pas partir. Tu ne vas pas venir ?"]], blurLastCol:true}
+    },
+    { sub:"Le passé composé : avoir/être (présent) + participe passé",
+      table:{headers:["Cas","Exemple"],
+        rows:[
+          ["avoir (majorité des verbes)","J'ai mangé. Il a pris."],
+          ["être : verbes pronominaux","Je me suis reposé(e)."],
+          ["être : 11 verbes de mouvement (aller, venir, partir, sortir, entrer, monter, descendre, arriver, passer, retourner, tomber)","On est entrés. Elle est née en 2000."]
+        ], blurLastCol:true}
+    },
+    { sub:null, note:"Avec <b>être</b>, le participe passé s'accorde avec le sujet : il est parti / elle est part<b>ie</b> / ils sont part<b>is</b> / elles sont part<b>ies</b>. Avec <b>avoir</b>, pas d'accord avec le sujet." },
+    { sub:"Formes du participe passé",
+      table:{headers:["Terminaison","Exemple"],
+        rows:[["-er → -é","visiter → j'ai visité"],["-ir → -i","finir → il a fini"],["-u","pouvoir → j'ai pu · venir → je suis venu"],["-is","prendre → il a pris · mettre → elle a mis"],["-it","dire → on a dit · écrire → j'ai écrit"],["-ert","ouvrir → ils ont ouvert"]],
+        blurLastCol:true}
+    },
+    { sub:"Le passé récent : venir de (présent) + infinitif",
+      table:{headers:["Pronom","Exemple"],
+        rows:[["je","Je viens de partir."],["tu","Tu viens de te réveiller."],["il/elle/on","Il vient de téléphoner."]], blurLastCol:true}
+    }
+  ]
+}
+];
+
+/* ============================================================
+   RENDU — GRAMMAIRE
+   ============================================================ */
+const accordionContainer = document.getElementById("accordionContainer");
+
+function renderTable(t){
+  let html = `<table class="gram-table"><thead><tr>`;
+  t.headers.forEach((h,i)=>{
+    const isLast = i === t.headers.length-1;
+    html += `<th class="${(t.blurLastCol && isLast)?'blurrable':''}">${h}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+  t.rows.forEach(row=>{
+    html += `<tr>`;
+    row.forEach((cell,i)=>{
+      const isLast = i === row.length-1;
+      html += `<td class="${(t.blurLastCol && isLast)?'blurrable':''}">${cell}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  return html;
+}
+
+function renderGrammar(){
+  accordionContainer.innerHTML = "";
+  grammarData.forEach((topic,idx)=>{
+    const item = document.createElement("div");
+    item.className = "accordion-item";
+    let bodyHtml = `<div class="accordion-content">`;
+    if(topic.intro) bodyHtml += `<p class="gram-intro">${topic.intro}</p>`;
+    topic.subs.forEach(s=>{
+      if(s.sub) bodyHtml += `<p class="sub-title">${s.sub}</p>`;
+      if(s.table) bodyHtml += renderTable(s.table);
+      if(s.note) bodyHtml += `<div class="exception-box">⚠️ ${s.note}</div>`;
+    });
+    bodyHtml += `</div>`;
+    item.innerHTML = `
+      <button class="accordion-head" data-idx="${idx}">
+        <span>${topic.title}</span>
+        <span class="arrow">▾</span>
+      </button>
+      <div class="accordion-body">${bodyHtml}</div>
+    `;
+    accordionContainer.appendChild(item);
+  });
+
+  document.querySelectorAll(".accordion-head").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      btn.parentElement.classList.toggle("open");
+    });
+  });
+
+  // click-to-reveal for touch devices in test mode
+  document.querySelectorAll(".blurrable").forEach(cell=>{
+    cell.addEventListener("click", ()=>{
+      if(document.body.classList.contains("test-mode")){
+        cell.classList.toggle("revealed");
+      }
+    });
+  });
+}
+renderGrammar();
+
+// open first topic by default
+if(accordionContainer.firstElementChild){
+  accordionContainer.firstElementChild.classList.add("open");
+}
+
+const testToggle = document.getElementById("testToggle");
+testToggle.addEventListener("click", ()=>{
+  document.body.classList.toggle("test-mode");
+  testToggle.classList.toggle("active");
+  document.querySelectorAll(".blurrable.revealed").forEach(c=>c.classList.remove("revealed"));
+});
+
+/* ============================================================
+   SRS — stockage local simple (boîtes 1 à 5)
+   ============================================================ */
+const SRS_KEY = "ff_srs_progress_v1";
+function loadSRS(){
+  try{ return JSON.parse(localStorage.getItem(SRS_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveSRS(data){
+  try{ localStorage.setItem(SRS_KEY, JSON.stringify(data)); }catch(e){}
+}
+let srsData = loadSRS();
+const BOX_INTERVALS = [1,1,2,4,7,15]; // jours, index = box level (0..5)
+
+function getCardState(word){
+  return srsData[word] || {box:0, nextReview:null, reviewed:false};
+}
+function isDue(word){
+  const st = getCardState(word);
+  if(!st.nextReview) return true;
+  return new Date(st.nextReview) <= new Date();
+}
+function reviewCard(word, quality){ // quality: 'hard'|'good'|'easy'
+  let st = getCardState(word);
+  if(quality === 'hard'){ st.box = 0; }
+  else if(quality === 'good'){ st.box = Math.min(st.box+1, BOX_INTERVALS.length-1); }
+  else { st.box = Math.min(st.box+2, BOX_INTERVALS.length-1); }
+  const days = BOX_INTERVALS[st.box];
+  const next = new Date();
+  next.setDate(next.getDate() + days);
+  st.nextReview = next.toISOString();
+  st.reviewed = true;
+  srsData[word] = st;
+  saveSRS(srsData);
+  return {days, nextDate: next};
+}
+function countDue(){
+  return vocabData.filter(v=>isDue(v.word)).length;
+}
+function countReviewed(){
+  return Object.values(srsData).filter(s=>s.reviewed).length;
+}
+
+/* ============================================================
+   RENDU — LEXIQUE (flashcards)
+   ============================================================ */
+const categories = ["Tous", ...Array.from(new Set(vocabData.map(v=>v.category)))];
+let activeCategory = "Tous";
+let showDueOnly = false;
+
+const categoryChips = document.getElementById("categoryChips");
+const cardGrid = document.getElementById("cardGrid");
+const dueToggle = document.getElementById("dueToggle");
+const dueCount = document.getElementById("dueCount");
+const streakBadge = document.getElementById("streakBadge");
+
+function renderChips(){
+  categoryChips.innerHTML = "";
+  categories.forEach(cat=>{
+    const chip = document.createElement("button");
+    chip.className = "chip" + (cat===activeCategory ? " active" : "");
+    chip.textContent = cat;
+    chip.addEventListener("click", ()=>{
+      activeCategory = cat;
+      renderChips();
+      renderCards();
+    });
+    categoryChips.appendChild(chip);
+  });
+}
+
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "fr-FR";
+  utter.rate = 0.9;
+  window.speechSynthesis.speak(utter);
+}
+
+function renderCards(){
+  cardGrid.innerHTML = "";
+  let list = vocabData.filter(v => activeCategory === "Tous" || v.category === activeCategory);
+  if(showDueOnly) list = list.filter(v => isDue(v.word));
+
+  if(list.length === 0){
+    cardGrid.innerHTML = `<p style="color:var(--ink-soft); grid-column:1/-1;">Aucune carte à réviser dans cette catégorie pour le moment. 🎉</p>`;
+  }
+
+  list.forEach(v=>{
+    const st = getCardState(v.word);
+    const card = document.createElement("div");
+    card.className = "flashcard";
+    card.innerHTML = `
+      <div class="flashcard-inner">
+        <div class="face front">
+          <span class="box-badge">Boîte ${st.box+1}</span>
+          <span class="face-type">${v.type}</span>
+          <p class="face-word">${v.word}</p>
+          <p class="face-phonetic">${v.phonetic}</p>
+          <button class="audio-btn" data-say="${v.word.replace(/"/g,'&quot;')}">🔊 Écouter</button>
+          <p class="flip-hint">Touchez pour retourner ↻</p>
+        </div>
+        <div class="face back">
+          <span class="face-type">${v.type}</span>
+          <p class="face-translation">${v.translation}</p>
+          <p class="face-example">${v.example}</p>
+          <button class="face-example-audio" data-say="${v.example.replace(/"/g,'&quot;')}">🔊 Écouter la phrase</button>
+          <div class="srs-row">
+            <button class="srs-btn srs-hard" data-word="${v.word}" data-q="hard">Difficile</button>
+            <button class="srs-btn srs-good" data-word="${v.word}" data-q="good">Bien</button>
+            <button class="srs-btn srs-easy" data-word="${v.word}" data-q="easy">Facile</button>
+          </div>
+          <p class="srs-next"></p>
+        </div>
+      </div>
+    `;
+    // flip on click, but not when clicking buttons
+    card.querySelector(".flashcard-inner").addEventListener("click", (e)=>{
+      if(e.target.closest("button")) return;
+      card.classList.toggle("flipped");
+    });
+    // audio buttons
+    card.querySelectorAll("[data-say]").forEach(btn=>{
+      btn.addEventListener("click",(e)=>{
+        e.stopPropagation();
+        speak(btn.getAttribute("data-say"));
+      });
+    });
+    // SRS buttons
+    card.querySelectorAll(".srs-btn").forEach(btn=>{
+      btn.addEventListener("click",(e)=>{
+        e.stopPropagation();
+        const word = btn.getAttribute("data-word");
+        const q = btn.getAttribute("data-q");
+        const {days, nextDate} = reviewCard(word, q);
+        const nextP = card.querySelector(".srs-next");
+        nextP.textContent = `Prochaine révision dans ${days} jour(s) — ${nextDate.toLocaleDateString('fr-FR')}`;
+        card.querySelector(".box-badge").textContent = `Boîte ${getCardState(word).box+1}`;
+        updateHeaderStats();
+      });
+    });
+    cardGrid.appendChild(card);
+  });
+}
+
+function updateHeaderStats(){
+  dueCount.textContent = countDue();
+  streakBadge.textContent = `📚 ${countReviewed()} mots révisés`;
+}
+
+dueToggle.addEventListener("click", ()=>{
+  showDueOnly = !showDueOnly;
+  dueToggle.classList.toggle("active", showDueOnly);
+  renderCards();
+});
+
+renderChips();
+renderCards();
+updateHeaderStats();
+
+/* ============================================================
+   NAVIGATION — TABS
+   ============================================================ */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    const target = btn.getAttribute("data-view");
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    document.getElementById(target).classList.add("active");
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+});
+</script>
+</body>
+</html>
