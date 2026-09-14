@@ -695,7 +695,6 @@ const AuthModule = (function(){
   const SESSION_KEY  = "app_currentUser";
   const ADMIN_DOC_ID = "__admin__"; // document Firestore dédié, id fixe et non réversible
   // Identifiants admin racine : jamais stockés en clair dans le code source.
-  // Ce sont les empreintes SHA-256 de "lalylala123" et "123" — la connexion
   // hache toujours la saisie de l'utilisateur et compare les empreintes.
   const ADMIN_USERNAME_HASH = "8109e82dae580d7dfa66a69dcb237f077a6d8e2102f1e18e8c2655168e647f72";
   const ADMIN_PASSWORD_HASH = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3";
