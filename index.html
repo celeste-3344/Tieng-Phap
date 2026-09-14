@@ -601,7 +601,7 @@ import {
   query, where, limit, arrayUnion, arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-// 🔽🔽🔽 REMPLACEZ CES VALEURS PAR CELLES DE VOTRE PROJET FIREBASE 🔽🔽🔽
+// ✅ Config du projet Firebase "tieng-phap-a1" (déjà en place)
 const firebaseConfig = {
   apiKey: "AIzaSyA8u7KvDiZ1kWnXwaT1UvZogoz9otw3EVM",
   authDomain: "tieng-phap-a1.firebaseapp.com",
@@ -611,7 +611,6 @@ const firebaseConfig = {
   appId: "1:378117552383:web:c6a0c2d6d64315db64f4ca",
   measurementId: "G-1VL63DJ5V7"
 };
-// 🔼🔼🔼 REMPLACEZ CES VALEURS PAR CELLES DE VOTRE PROJET FIREBASE 🔼🔼🔼
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
@@ -663,6 +662,21 @@ const usersCol = collection(db, "users");
    n'est jamais conservé ni comparé en texte clair : tout passe
    par ce hachage asynchrone avant d'être stocké ou vérifié.
    ============================================================ */
+/* ============================================================
+   FIABILITÉ RÉSEAU — aucune requête Firestore ne doit pouvoir
+   bloquer l'interface indéfiniment (réseau capricieux, domaine
+   Firebase bloqué par un pare-feu/bloqueur de pub, etc.). Toute
+   opération Firestore critique est enveloppée par ce timeout.
+   ============================================================ */
+function withTimeout(promise, ms = 8000, label = "Firestore"){
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(
+      () => reject(new Error(`${label}: délai dépassé (pas de réponse après ${ms}ms).`)), ms
+    ))
+  ]);
+}
+
 async function sha256Hex(text){
   const bytes = new TextEncoder().encode(String(text));
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -693,7 +707,7 @@ const AuthModule = (function(){
   function userDocRef(username){ return doc(usersCol, username.trim().toLowerCase()); }
 
   async function findUser(username){
-    const snap = await getDoc(userDocRef(username));
+    const snap = await withTimeout(getDoc(userDocRef(username)), 8000, "findUser");
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   }
   function setCurrentUser(id){ localStorage.setItem(SESSION_KEY, id); }
@@ -701,20 +715,28 @@ const AuthModule = (function(){
   function getCurrentUser(){ return localStorage.getItem(SESSION_KEY); }
 
   // Garantit qu'un compte admin racine existe toujours dans Firestore.
+  // N'est PAS bloquant pour la connexion admin elle-même (voir login()) —
+  // sert seulement à ce que le document existe pour une utilisation future.
   async function ensureRootAdmin(){
-    const adminRef = doc(usersCol, ADMIN_DOC_ID);
-    const snap = await getDoc(adminRef);
-    if(!snap.exists() || snap.data().username !== ADMIN_USERNAME_HASH || snap.data().passwordHash !== ADMIN_PASSWORD_HASH || !snap.data().isApproved){
-      await setDoc(adminRef, {
-        username: ADMIN_USERNAME_HASH,
-        passwordHash: ADMIN_PASSWORD_HASH,
-        isAdmin: true,
-        isApproved: true,
-        createdAt: snap.exists() ? snap.data().createdAt : new Date().toISOString()
-      }, { merge: true });
+    try{
+      const adminRef = doc(usersCol, ADMIN_DOC_ID);
+      const snap = await withTimeout(getDoc(adminRef), 8000, "ensureRootAdmin/getDoc");
+      if(!snap.exists() || snap.data().username !== ADMIN_USERNAME_HASH || snap.data().passwordHash !== ADMIN_PASSWORD_HASH || !snap.data().isApproved){
+        await withTimeout(setDoc(adminRef, {
+          username: ADMIN_USERNAME_HASH,
+          passwordHash: ADMIN_PASSWORD_HASH,
+          isAdmin: true,
+          isApproved: true,
+          createdAt: snap.exists() ? snap.data().createdAt : new Date().toISOString()
+        }, { merge: true }), 8000, "ensureRootAdmin/setDoc");
+      }
+    }catch(e){
+      // Si Firebase n'est pas encore configuré/déployé (règles, clés...),
+      // on logge simplement l'erreur : ça ne doit jamais bloquer la connexion.
+      console.error("AuthModule: impossible de vérifier/créer le document admin dans Firestore.", e);
     }
   }
-  const rootAdminReady = ensureRootAdmin(); // lancé au chargement du module
+  const rootAdminReady = ensureRootAdmin(); // lancé au chargement du module, jamais rejeté (voir try/catch ci-dessus)
 
   function validateFields(username, password){
     if(!username.trim() || !password.trim()) return "Veuillez remplir tous les champs.";
@@ -726,24 +748,28 @@ const AuthModule = (function(){
   }
 
   async function register(username, password, pin){
-    await rootAdminReady;
     username = username.trim(); password = password.trim(); pin = (pin || "").trim();
     const fieldError = validateFields(username, password);
     if(fieldError) return { success:false, message: fieldError };
     const pinError = validatePin(pin);
     if(pinError) return { success:false, message: pinError };
     if(username.trim().toLowerCase() === ADMIN_DOC_ID) return { success:false, message: "Ce nom d'utilisateur existe déjà." };
-    if(await findUser(username)) return { success:false, message: "Ce nom d'utilisateur existe déjà." };
-    const [passwordHash, recoveryPinHash] = await Promise.all([sha256Hex(password), sha256Hex(pin)]);
-    await setDoc(userDocRef(username), {
-      username,
-      passwordHash,
-      recoveryPinHash,
-      isAdmin: false,
-      isApproved: false, // en attente de validation par l'administrateur
-      progress: { learned: [], toReview: [] },
-      createdAt: new Date().toISOString()
-    });
+    try{
+      if(await findUser(username)) return { success:false, message: "Ce nom d'utilisateur existe déjà." };
+      const [passwordHash, recoveryPinHash] = await Promise.all([sha256Hex(password), sha256Hex(pin)]);
+      await withTimeout(setDoc(userDocRef(username), {
+        username,
+        passwordHash,
+        recoveryPinHash,
+        isAdmin: false,
+        isApproved: false, // en attente de validation par l'administrateur
+        progress: { learned: [], toReview: [] },
+        createdAt: new Date().toISOString()
+      }), 8000, "register/setDoc");
+    }catch(e){
+      console.error("AuthModule.register: erreur Firestore.", e);
+      return { success:false, message: "Impossible de créer le compte pour le moment (connexion à la base de données impossible). Vérifiez la configuration Firebase et réessayez." };
+    }
     // Pas de connexion automatique : le compte doit d'abord être approuvé.
     return {
       success:true,
@@ -753,18 +779,25 @@ const AuthModule = (function(){
   }
 
   async function login(username, password){
-    await rootAdminReady;
     username = username.trim(); password = password.trim();
     const fieldError = validateFields(username, password);
     if(fieldError) return { success:false, message: fieldError };
     const [usernameHash, passwordHash] = await Promise.all([sha256Hex(username), sha256Hex(password)]);
-    // Compte admin racine : comparaison uniquement par empreinte, jamais en clair.
+    // Compte admin racine : comparaison uniquement par empreinte, jamais en
+    // clair, ET sans jamais dépendre de Firestore — la connexion admin doit
+    // toujours fonctionner même si la base de données est mal configurée.
     if(usernameHash === ADMIN_USERNAME_HASH && passwordHash === ADMIN_PASSWORD_HASH){
       setCurrentUser(ADMIN_DOC_ID);
       fireAuthChange(ADMIN_DOC_ID);
       return { success:true };
     }
-    const user = await findUser(username);
+    let user;
+    try{
+      user = await findUser(username);
+    }catch(e){
+      console.error("AuthModule.login: erreur Firestore.", e);
+      return { success:false, message: "Connexion à la base de données impossible pour le moment. Vérifiez la configuration Firebase et réessayez." };
+    }
     if(!user || user.passwordHash !== passwordHash) return { success:false, message: "Nom d'utilisateur ou mot de passe incorrect." };
     if(!user.isApproved){
       return { success:false, pending:true, message: "Votre compte est en attente d'approbation par l'administrateur." };
@@ -779,20 +812,24 @@ const AuthModule = (function(){
   function fireAuthChange(id){ if(typeof authChangeCallback === "function") authChangeCallback(id); }
 
   async function init(){
-    await rootAdminReady;
     const existing = getCurrentUser();
     if(!existing) return null;
-    if(existing === ADMIN_DOC_ID) return existing;
-    const snap = await getDoc(doc(usersCol, existing));
-    if(snap.exists()) return existing;
-    clearCurrentUser();
-    return null;
+    if(existing === ADMIN_DOC_ID) return existing; // court-circuit : jamais d'appel Firestore pour l'admin
+    try{
+      const snap = await withTimeout(getDoc(doc(usersCol, existing)), 8000, "init/getDoc");
+      if(snap.exists()) return existing;
+      clearCurrentUser();
+      return null;
+    }catch(e){
+      console.error("AuthModule.init: erreur Firestore, session conservée par précaution.", e);
+      return existing; // ne pas déconnecter l'utilisateur à cause d'un souci réseau passager
+    }
   }
 
   async function isAdmin(id){
     if(!id) return false;
     if(id === ADMIN_DOC_ID) return true;
-    const snap = await getDoc(doc(usersCol, id));
+    const snap = await withTimeout(getDoc(doc(usersCol, id)), 8000, "isAdmin");
     return snap.exists() && !!snap.data().isAdmin;
   }
 
@@ -800,13 +837,13 @@ const AuthModule = (function(){
   // d'utilisateur choisi (lu depuis Firestore, casse d'origine conservée).
   async function getDisplayName(id){
     if(id === ADMIN_DOC_ID) return "Admin";
-    const snap = await getDoc(doc(usersCol, id));
+    const snap = await withTimeout(getDoc(doc(usersCol, id)), 8000, "getDisplayName");
     return snap.exists() ? snap.data().username : id;
   }
 
   // Liste tous les utilisateurs normaux (l'admin racine est exclu).
   async function getAllUsers(){
-    const snaps = await getDocs(usersCol);
+    const snaps = await withTimeout(getDocs(usersCol), 8000, "getAllUsers");
     const list = [];
     snaps.forEach(d=>{
       const data = d.data();
@@ -816,12 +853,12 @@ const AuthModule = (function(){
   }
 
   async function approveUser(usernameId){
-    await updateDoc(doc(usersCol, usernameId.trim().toLowerCase()), { isApproved: true });
+    await withTimeout(updateDoc(doc(usersCol, usernameId.trim().toLowerCase()), { isApproved: true }), 8000, "approveUser");
   }
 
   async function deleteUser(usernameId){
     // Supprime le compte ET sa progression (le tout vit dans le même document).
-    await deleteDoc(doc(usersCol, usernameId.trim().toLowerCase()));
+    await withTimeout(deleteDoc(doc(usersCol, usernameId.trim().toLowerCase())), 8000, "deleteUser");
   }
 
   // ---- Réinitialisation du mot de passe via le code PIN de récupération ----
@@ -841,7 +878,12 @@ const AuthModule = (function(){
     if(!verify.success) return verify;
     if(!newPassword || !newPassword.trim()) return { success:false, message:"Veuillez saisir un nouveau mot de passe." };
     const newHash = await sha256Hex(newPassword.trim());
-    await updateDoc(userDocRef(username), { passwordHash: newHash });
+    try{
+      await withTimeout(updateDoc(userDocRef(username), { passwordHash: newHash }), 8000, "resetPassword");
+    }catch(e){
+      console.error("AuthModule.resetPassword: erreur Firestore.", e);
+      return { success:false, message:"Connexion à la base de données impossible pour le moment. Réessayez." };
+    }
     return { success:true, message:"Mot de passe mis à jour avec succès." };
   }
 
@@ -894,6 +936,9 @@ const AuthModule = (function(){
       const result = await AuthModule.login(usernameInput.value, passwordInput.value);
       if(!result.success) showError(result.message, result.pending);
       else location.reload(); // recharge pour appliquer l'état lié au nouvel utilisateur
+    }catch(e){
+      console.error("Erreur inattendue lors de la connexion.", e);
+      showError("Une erreur inattendue est survenue. Réessayez.", false);
     } finally { loginBtn.disabled = false; }
   });
   registerBtn.addEventListener("click", async ()=>{
@@ -910,6 +955,9 @@ const AuthModule = (function(){
       if(!result.success) showError(result.message, false);
       else if(result.pending) showError(result.message, true); // compte créé, en attente d'approbation
       else location.reload();
+    }catch(e){
+      console.error("Erreur inattendue lors de l'inscription.", e);
+      showError("Une erreur inattendue est survenue. Réessayez.", false);
     } finally { registerBtn.disabled = false; }
   });
   [usernameInput, passwordInput, pinInput].forEach(input=>{
@@ -920,14 +968,24 @@ const AuthModule = (function(){
   (async ()=>{
     const existingUser = await AuthModule.init();
     if(existingUser){
+      // L'overlay est masqué dès que la session est valide, AVANT même
+      // d'attendre le nom d'affichage / le statut admin (qui ne doivent
+      // jamais retarder ni bloquer l'accès à l'application).
       overlay.classList.add("hidden");
       appRoot.style.display = "block";
       const wt = document.getElementById("welcomeText");
-      if(wt) wt.textContent = `Bonjour, ${await AuthModule.getDisplayName(existingUser)}`;
-      if(await AuthModule.isAdmin(existingUser)){
-        const adminBtn = document.getElementById("adminPanelBtn");
-        if(adminBtn) adminBtn.style.display = "inline-block";
+      try{
+        if(wt) wt.textContent = `Bonjour, ${await AuthModule.getDisplayName(existingUser)}`;
+      }catch(e){
+        console.error("Impossible de récupérer le nom d'affichage.", e);
+        if(wt) wt.textContent = "Bonjour";
       }
+      try{
+        if(await AuthModule.isAdmin(existingUser)){
+          const adminBtn = document.getElementById("adminPanelBtn");
+          if(adminBtn) adminBtn.style.display = "inline-block";
+        }
+      }catch(e){ console.error("Impossible de vérifier le statut admin.", e); }
     }else{
       overlay.classList.remove("hidden");
       appRoot.style.display = "none";
@@ -1078,8 +1136,15 @@ const AuthModule = (function(){
     progressSummary.innerHTML = `<p class="admin-empty">Chargement…</p>`;
     progressOverlay.classList.remove("hidden");
 
-    const snap = await getDoc(doc(usersCol, userId));
-    const progress = (snap.exists() && snap.data().progress) || { learned: [], toReview: [] };
+    let progress = { learned: [], toReview: [] };
+    try{
+      const snap = await withTimeout(getDoc(doc(usersCol, userId)), 8000, "openProgressModal");
+      if(snap.exists() && snap.data().progress) progress = snap.data().progress;
+    }catch(e){
+      console.error("Impossible de charger la progression de l'utilisateur.", e);
+      progressSummary.innerHTML = `<p class="admin-empty">Erreur de connexion à Firestore. Réessayez.</p>`;
+      return;
+    }
     const learnedSet = new Set(progress.learned || []);
 
     const learnedWords = vocabData.filter(v => learnedSet.has(v.rawWord));
@@ -2418,7 +2483,7 @@ const currentUserId = AuthModule.getCurrentUser(); // null = invité (mode démo
 async function loadStates(){
   if(!currentUserId) return {};
   try{
-    const snap = await getDoc(doc(usersCol, currentUserId));
+    const snap = await withTimeout(getDoc(doc(usersCol, currentUserId)), 8000, "loadStates");
     if(!snap.exists()) return {};
     const progress = snap.data().progress || {};
     const map = {};
@@ -2431,6 +2496,8 @@ async function loadStates(){
 }
 // Utilise "top-level await" (le script est chargé en tant que module) pour
 // s'assurer que la progression est chargée AVANT le premier rendu des cartes.
+// loadStates() ne rejette jamais (try/catch ci-dessus + timeout) : cet await
+// ne peut donc jamais geler le reste de l'application.
 let wordStates = await loadStates();
 
 function getWordState(rawWord){
@@ -2443,15 +2510,15 @@ async function setWordState(rawWord, state){
   if(!currentUserId) return; // invité : rien à synchroniser
   try{
     if(state === "learned"){
-      await updateDoc(doc(usersCol, currentUserId), {
+      await withTimeout(updateDoc(doc(usersCol, currentUserId), {
         "progress.learned": arrayUnion(rawWord),
         "progress.toReview": arrayRemove(rawWord)
-      });
+      }), 8000, "setWordState/learned");
     }else{
-      await updateDoc(doc(usersCol, currentUserId), {
+      await withTimeout(updateDoc(doc(usersCol, currentUserId), {
         "progress.learned": arrayRemove(rawWord),
         "progress.toReview": arrayUnion(rawWord)
-      });
+      }), 8000, "setWordState/toReview");
     }
   }catch(e){ console.error("Impossible d'enregistrer la progression dans Firestore.", e); }
 }
@@ -2459,7 +2526,7 @@ async function resetAllStates(){
   wordStates = {};
   if(!currentUserId) return;
   try{
-    await updateDoc(doc(usersCol, currentUserId), { "progress.learned": [], "progress.toReview": [] });
+    await withTimeout(updateDoc(doc(usersCol, currentUserId), { "progress.learned": [], "progress.toReview": [] }), 8000, "resetAllStates");
   }catch(e){ console.error("Impossible de réinitialiser la progression dans Firestore.", e); }
 }
 function countToReview(){
